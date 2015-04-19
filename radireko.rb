@@ -23,10 +23,11 @@ class Radireko
     stations = REXML::XPath.match(program_list, '/radiko/stations/station').each do |station_info|
       REXML::XPath.match(station_info, "scd/progs/prog").each do |program_info|
         if broadcasting_soon?(program_info) && program_info_include_keywords?(program_info)
-          sid = station_info.attributes['id']
+          sid      = station_info.attributes['id']
           duration = program_info.attributes['dur'].to_i + (RADIREKO_CONFIG[:magic_sec] + RADIREKO_CONFIG[:prepare_record_sec])
-          title = REXML::XPath.first(program_info, 'title').text
-          do_record(sid, duration, title, RADIREKO_CONFIG[:rec_dir])
+          title    = REXML::XPath.first(program_info, 'title').text
+          from     = program_info_parsed_xml.attributes['ft']
+          do_record(sid, duration, "#{from}_#{title}", RADIREKO_CONFIG[:rec_dir])
         end
       end
     end
