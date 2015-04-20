@@ -26,7 +26,7 @@ class Radireko
           sid      = station_info.attributes['id']
           duration = program_info.attributes['dur'].to_i + (RADIREKO_CONFIG[:magic_sec] + RADIREKO_CONFIG[:prepare_record_sec])
           title    = REXML::XPath.first(program_info, 'title').text
-          from     = program_info_parsed_xml.attributes['ft']
+          from     = program_info.attributes['ft']
           do_record(sid, duration, "#{from}_#{title}", RADIREKO_CONFIG[:rec_dir])
         end
       end
