@@ -16,6 +16,7 @@ class Radireko
   def initialize
     begin
       fetch_program_list if program_info_is_old?
+    rescue
     end
     @keywords = YAML.load_file("keywords.yaml")
   end
