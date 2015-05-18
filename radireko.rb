@@ -76,7 +76,7 @@ class Radireko
   end
 
   def do_record(sid, duration, filename, out_dir = ROOT_DIR)
-    cmd = "#{ROOT_DIR}/rec_radiko.sh #{sid} #{duration} \"#{filename}\" #{out_dir} > #{out_dir}/#{filename}.txt 2>&1"
+    cmd = "#{ROOT_DIR}/rec_radiko.sh #{sid} #{duration} \"#{filename}\" #{out_dir} > \"#{out_dir}/#{filename}.txt\" 2>&1"
     puts cmd
     pid = spawn(cmd)
     Process.detach(pid)
