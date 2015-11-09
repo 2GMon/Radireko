@@ -60,7 +60,7 @@ class Radireko
   end
 
   def broadcasting_soon?(program_info_parsed_xml)
-    from = Time.strptime(program_info_parsed_xml.attributes['ft'], "%Y%m%d%H%M%S")
+    from = Time.strptime(program_info_parsed_xml.attributes['ft'] + "+0900", "%Y%m%d%H%M%S%z")
     from.to_i - (RADIREKO_CONFIG[:prepare_record_sec]) <= Time.now.to_i && Time.now.to_i < from.to_i
   end
 
