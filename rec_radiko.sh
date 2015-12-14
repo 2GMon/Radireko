@@ -19,6 +19,7 @@ filename=$3
 outdir=$4
 
 function get_player {
+    echo "get player"
     if [ ! -f $playerfile ]; then
         wget -q -O $playerfile $playerurl
 
@@ -30,6 +31,7 @@ function get_player {
 }
 
 function get_keydata {
+    echo "get keydata"
     if [ ! -f $keyfile ]; then
         swfextract -b 14 $playerfile -o $keyfile
 
@@ -41,6 +43,7 @@ function get_keydata {
 }
 
 function access_auth1_fms {
+    echo "access_auth1_fms"
     if [ -f auth1_fms_${pid} ]; then
         rm -f auth1_fms_${pid}
     fi
@@ -55,7 +58,7 @@ function access_auth1_fms {
         --no-check-certificate \
         --load-cookies $cookiefile \
         --save-headers \
-        -O auth1_fms_${pid} \
+        -O /tmp/auth1_fms_${pid} \
         https://radiko.jp/v2/api/auth1_fms
 
     if [ $? -ne 0 ]; then
@@ -65,9 +68,10 @@ function access_auth1_fms {
 }
 
 function get_partial_key {
-    authtoken=`awk '/X-Radiko-AuthToken:/ { print $2 }' auth1_fms_${pid} | tr -d '\r\n'`
-    offset=`awk '/X-Radiko-KeyOffset:/ { print $2 }' auth1_fms_${pid} | tr -d '\r\n'`
-    length=`awk '/X-Radiko-KeyLength:/ { print $2 }' auth1_fms_${pid} | tr -d '\r\n'`
+    echo "get_partial_key"
+    authtoken=`awk '/X-Radiko-AuthToken:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
+    offset=`awk '/X-Radiko-KeyOffset:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
+    length=`awk '/X-Radiko-KeyLength:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
 
     partialkey=`dd if=$keyfile bs=1 skip=${offset} count=${length} 2> /dev/null | base64`
 
@@ -76,12 +80,13 @@ function get_partial_key {
     echo "length: ${length}"
     echo "partialkey: $partialkey"
 
-    rm -f auth1_fms_${pid}
+    rm -f /tmp/auth1_fms_${pid}
 }
 
 function access_auth2_fms {
-    if [ -f auth2_fms_${pid} ]; then
-        rm -f auth2_fms_${pid}
+    echo "access_auth2_fms"
+    if [ -f /tmp/auth2_fms_${pid} ]; then
+        rm -f /tmp/auth2_fms_${pid}
     fi
 
     wget -q \
@@ -95,17 +100,17 @@ function access_auth2_fms {
         --post-data='\r\n' \
         --load-cookies $cookiefile \
         --no-check-certificate \
-        -O auth2_fms_${pid} \
+        -O /tmp/auth2_fms_${pid} \
         https://radiko.jp/v2/api/auth2_fms
 
-    if [ $? -ne 0 -o ! -f auth2_fms_${pid} ]; then
+    if [ $? -ne 0 -o ! -f /tmp/auth2_fms_${pid} ]; then
         echo "failed auth2 process"
-        rm -f auth2_fms_${pid}
+        rm -f /tmp/auth2_fms_${pid}
         exit 1
     fi
 
     echo "authentication success"
-    rm -f auth2_fms_${pid}
+    rm -f /tmp/auth2_fms_${pid}
 }
 
 function auth {
@@ -117,13 +122,14 @@ function auth {
 }
 
 function get_stream_url {
-    if [ -f ${channel}.xml ]; then
-        rm -f ${channel}.xml
+    echo "get_stream_url"
+    if [ -f /tmp/${channel}.xml ]; then
+        rm -f /tmp/${channel}.xml
     fi
 
-    wget -q "http://radiko.jp/v2/station/stream/${channel}.xml"
+    wget -q "http://radiko.jp/v2/station/stream/${channel}.xml" -O /tmp/${channel}.xml
 
-    stream_url=`echo "cat /url/item[1]/text()" | xmllint --shell ${channel}.xml | tail -2 | head -1`
+    stream_url=`echo "cat /url/item[1]/text()" | xmllint --shell /tmp/${channel}.xml | tail -2 | head -1`
     rtmpdump_r=${stream_url%/*/*/*.*}
     rtmpdump_app=${stream_url%/*.*}
     rtmpdump_app=${rtmpdump_app##*jp/}
@@ -134,6 +140,12 @@ function get_stream_url {
 }
 
 function rec {
+    echo "start rec"
+    echo "================================="
+    echo ${rtmpdump_r}
+    echo ${rtmpdump_app}
+    echo "================================="
+
     rtmpdump -v \
         -r ${rtmpdump_r} \
         --app ${rtmpdump_app} \

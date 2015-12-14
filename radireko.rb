@@ -14,6 +14,7 @@ class Radireko
   TOMORROW_XML_PATH = "#{ROOT_DIR}/#{RADIREKO_CONFIG[:radiko_area_id]}_tomorrow.xml"
 
   def initialize
+    puts "initialize Radireko"
     begin
       fetch_program_list if program_info_is_old?
     rescue
@@ -41,11 +42,17 @@ class Radireko
     return true if !File.exist?(TODAY_XML_PATH)
 
     program_list = REXML::Document.new(open(TODAY_XML_PATH))
-    return true if REXML::XPath.first(program_list, '/radiko/ttl').text.to_i +
-      REXML::XPath.first(program_list, '/radiko/srvtime').text.to_i < Time.now.to_i
+    begin
+      return true if REXML::XPath.first(program_list, '/radiko/ttl').text.to_i +
+        REXML::XPath.first(program_list, '/radiko/srvtime').text.to_i < Time.now.to_i
+    rescue
+      return true
+    end
+    false
   end
 
   def fetch_program_list
+    puts "fetch program list"
     open(TODAY_XML_PATH, 'wb') do |f|
       open(RADIKO_PROGRAM_URL_TODAY) do |xml|
         f.write(xml.read)
