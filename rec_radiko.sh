@@ -154,7 +154,7 @@ function rec {
         -C S:"" -C S:"" -C S:"" -C S:$authtoken \
         --live \
         --stop ${DURATION} | \
-        ffmpeg -loglevel quiet -i pipe:0 -acodec libvorbis -ab 128k "${outdir}/${filename}.ogg"
+        ffmpeg -loglevel quiet -i pipe:0 -acodec libmp3lame -ab 64k "${outdir}/${filename}.mp3"
 }
 
 auth
