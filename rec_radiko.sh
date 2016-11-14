@@ -2,7 +2,7 @@
 
 pid=$$
 date=`date '+%Y-%m-%d-%H_%M'`
-playerurl=http://radiko.jp/player/swf/player_4.1.0.00.swf
+playerurl=http://radiko.jp/apps/js/flash/myplayer-release.swf
 playerfile="/tmp/pre_player.swf"
 keyfile="/tmp/pre_authkey.png"
 cookiefile="/tmp/pre_cookie_${pid}_${date}.txt"
@@ -33,7 +33,7 @@ function get_player {
 function get_keydata {
     echo "get keydata"
     if [ ! -f $keyfile ]; then
-        swfextract -b 14 $playerfile -o $keyfile
+        swfextract -b 12 $playerfile -o $keyfile
 
         if [ ! -f $keyfile ]; then
             echo "failed get keydata"
@@ -50,8 +50,8 @@ function access_auth1_fms {
 
     wget -q \
         --header="pragma: no-cache" \
-        --header="X-Radiko-App: pc_1" \
-        --header="X-Radiko-App-Version: 2.0.1" \
+        --header="X-Radiko-App: pc_ts" \
+        --header="X-Radiko-App-Version: 4.0.1" \
         --header="X-Radiko-User: test-stream" \
         --header="X-Radiko-Device: pc" \
         --post-data='\r\n' \
@@ -91,8 +91,8 @@ function access_auth2_fms {
 
     wget -q \
         --header="pragma: no-cache" \
-        --header="X-Radiko-App: pc_1" \
-        --header="X-Radiko-App-Version: 2.0.1" \
+        --header="X-Radiko-App: pc_ts" \
+        --header="X-Radiko-App-Version: 4.0.0" \
         --header="X-Radiko-User: test-stream" \
         --header="X-Radiko-Device: pc" \
         --header="X-Radiko-Authtoken: ${authtoken}" \
