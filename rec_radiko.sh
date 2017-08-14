@@ -89,25 +89,36 @@ function access_auth2_fms {
         rm -f /tmp/auth2_fms_${pid}
     fi
 
-    wget -q \
-        --header="pragma: no-cache" \
-        --header="X-Radiko-App: pc_ts" \
-        --header="X-Radiko-App-Version: 4.0.0" \
-        --header="X-Radiko-User: test-stream" \
-        --header="X-Radiko-Device: pc" \
-        --header="X-Radiko-Authtoken: ${authtoken}" \
-        --header="X-Radiko-Partialkey: ${partialkey}" \
-        --post-data='\r\n' \
-        --load-cookies $cookiefile \
-        --no-check-certificate \
-        -O /tmp/auth2_fms_${pid} \
-        https://radiko.jp/v2/api/auth2_fms
+    i=0
+    while :
+    do
+        wget -q \
+            --header="pragma: no-cache" \
+            --header="X-Radiko-App: pc_ts" \
+            --header="X-Radiko-App-Version: 4.0.0" \
+            --header="X-Radiko-User: test-stream" \
+            --header="X-Radiko-Device: pc" \
+            --header="X-Radiko-Authtoken: ${authtoken}" \
+            --header="X-Radiko-Partialkey: ${partialkey}" \
+            --post-data='\r\n' \
+            --load-cookies $cookiefile \
+            --no-check-certificate \
+            -O /tmp/auth2_fms_${pid} \
+            https://radiko.jp/v2/api/auth2_fms
 
-    if [ $? -ne 0 -o ! -f /tmp/auth2_fms_${pid} ]; then
-        echo "failed auth2 process"
-        rm -f /tmp/auth2_fms_${pid}
-        exit 1
-    fi
+        if [ $? -eq 0 ]; then
+            break
+        else
+            i=`expr ${i} + 1`
+            echo "retry auth2 [${i}]"
+            sleep 1
+            if [ ${i} -eq 5 ]; then
+                echo "failed auth2 process"
+                rm -f /tmp/auth2_fms_${pid}
+                exit 1
+            fi
+        fi
+    done
 
     echo "authentication success"
     rm -f /tmp/auth2_fms_${pid}
