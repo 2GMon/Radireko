@@ -70,6 +70,9 @@ function access_auth1_fms {
 function get_partial_key {
     echo "get_partial_key"
     authtoken=`awk '/X-Radiko-AuthToken:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
+    if [ -z $authtoken ]; then
+        authtoken=`awk '/X-RADIKO-AUTHTOKEN:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
+    fi
     offset=`awk '/X-Radiko-KeyOffset:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
     length=`awk '/X-Radiko-KeyLength:/ { print $2 }' /tmp/auth1_fms_${pid} | tr -d '\r\n'`
 
@@ -89,39 +92,28 @@ function access_auth2_fms {
         rm -f /tmp/auth2_fms_${pid}
     fi
 
-    i=0
-    while :
-    do
-        wget -q \
-            --header="pragma: no-cache" \
-            --header="X-Radiko-App: pc_ts" \
-            --header="X-Radiko-App-Version: 4.0.0" \
-            --header="X-Radiko-User: test-stream" \
-            --header="X-Radiko-Device: pc" \
-            --header="X-Radiko-Authtoken: ${authtoken}" \
-            --header="X-Radiko-Partialkey: ${partialkey}" \
-            --post-data='\r\n' \
-            --load-cookies $cookiefile \
-            --no-check-certificate \
-            -O /tmp/auth2_fms_${pid} \
-            https://radiko.jp/v2/api/auth2_fms
+    wget -q \
+        --header="pragma: no-cache" \
+        --header="X-Radiko-App: pc_ts" \
+        --header="X-Radiko-App-Version: 4.0.0" \
+        --header="X-Radiko-User: test-stream" \
+        --header="X-Radiko-Device: pc" \
+        --header="X-Radiko-Authtoken: ${authtoken}" \
+        --header="X-Radiko-Partialkey: ${partialkey}" \
+        --post-data='\r\n' \
+        --load-cookies $cookiefile \
+        --no-check-certificate \
+        -O /tmp/auth2_fms_${pid} \
+        https://radiko.jp/v2/api/auth2_fms
 
-        if [ $? -eq 0 ]; then
-            break
-        else
-            i=`expr ${i} + 1`
-            echo "retry auth2 [${i}]"
-            sleep 1
-            if [ ${i} -eq 5 ]; then
-                echo "failed auth2 process"
-                rm -f /tmp/auth2_fms_${pid}
-                exit 1
-            fi
-        fi
-    done
-
-    echo "authentication success"
-    rm -f /tmp/auth2_fms_${pid}
+    if [ $? -ne 0 -o ! -f /tmp/auth2_fms_${pid} ]; then
+        echo "failed auth2 process"
+        return 1
+    else
+        echo "authentication success"
+        rm -f /tmp/auth2_fms_${pid}
+        return 0
+    fi
 }
 
 function auth {
@@ -130,6 +122,11 @@ function auth {
     access_auth1_fms
     get_partial_key
     access_auth2_fms
+    if [ $? -eq 0 ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 function get_stream_url {
@@ -168,6 +165,21 @@ function rec {
         ffmpeg -loglevel quiet -i pipe:0 -acodec libmp3lame -ab 64k "${outdir}/${filename}.mp3"
 }
 
-auth
+i=0
+while :
+do
+    auth
+    if [ $? -eq 0 ]; then
+        break
+    else
+        i=`expr ${i} + 1`
+        if [ ${i} -eq 30 ]; then
+            echo "failed auth"
+            exit 1
+        fi
+        echo "retry [${i}]"
+        sleep 1
+    fi
+done
 get_stream_url
 rec
